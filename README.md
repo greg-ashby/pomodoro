@@ -4,6 +4,8 @@ A simple, beautiful Pomodoro timer app built with React that can be installed as
 
 Beautiful? This was just an experiment in vibe coding lol
 
+Now available to install at [https://greg-ashby.github.io/pomodoro/](https://greg-ashby.github.io/pomodoro/)
+
 ## Features
 
 - ⏱️ Adjustable focus time (default: 45 minutes)
