@@ -2,6 +2,8 @@
 
 A simple, beautiful Pomodoro timer app built with React that can be installed as a Progressive Web App (PWA).
 
+Beautiful? This was just an experiment in vibe coding lol
+
 ## Features
 
 - ⏱️ Adjustable focus time (default: 45 minutes)
