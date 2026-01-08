@@ -65,3 +65,33 @@ The app will work offline and can be launched like a native app!
 - You're using a modern browser (Chrome, Edge, Safari)
 - The app is served over HTTPS or localhost (required for PWA)
 
+## Deploying to GitHub Pages
+
+The app includes a GitHub Actions workflow that automatically builds and deploys to GitHub Pages.
+
+### Setup Instructions
+
+1. **Enable GitHub Pages in your repository:**
+   - Go to your repository on GitHub
+   - Click **Settings** → **Pages**
+   - Under "Source", select **GitHub Actions**
+
+2. **Update the base path (if needed):**
+   - Open `.github/workflows/deploy.yml`
+   - Find the line: `VITE_BASE_PATH: '/pomodoro/'`
+   - Change `'/pomodoro/'` to match your repository name:
+     - If your repo is `username/pomodoro`, use `'/pomodoro/'`
+     - If your repo is `username.github.io` (user page), use `'/'`
+     - If your repo is `username/my-timer`, use `'/my-timer/'`
+
+3. **Push to trigger deployment:**
+   - Push your code to the `main` or `master` branch
+   - The workflow will automatically build and deploy
+   - Your app will be available at: `https://username.github.io/repo-name/`
+
+4. **Access your deployed app:**
+   - Once deployed, visit the URL shown in your repository's Pages settings
+   - The app will be installable as a PWA from that URL
+
+The workflow runs automatically on every push to the main branch, so your deployed app stays up to date!
+
