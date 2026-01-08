@@ -1,0 +1,151 @@
+.timer-container {
+  text-align: center;
+}
+
+.timer-mode {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.timer-display {
+  font-size: 72px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.timer-control-icons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.timer-button {
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 120px;
+}
+
+.timer-button.primary {
+  background: #4a5568;
+  color: white;
+}
+
+.timer-button.primary:hover {
+  background: #2d3748;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 85, 104, 0.3);
+}
+
+.timer-button.secondary {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.timer-button.secondary:hover {
+  background: #cbd5e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.timer-button:active {
+  transform: translateY(0);
+}
+
+.timer-icon-button {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.timer-icon-button:hover {
+  background: #edf2f7;
+  border-color: #667eea;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.timer-icon-button:active {
+  transform: scale(0.95);
+}
+
+.quick-start-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.quick-button {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background: white;
+  border: 2px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-button:hover {
+  background: #f7fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quick-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .timer-display {
+    font-size: 56px;
+  }
+  
+  .timer-controls {
+    flex-direction: column;
+  }
+  
+  .timer-button {
+    width: 100%;
+  }
+  
+  .timer-control-icons {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .timer-icon-button {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+}
+

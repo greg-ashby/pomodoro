@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons</title>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Click the button below to generate the required PWA icons.</p>
+    <button onclick="generateIcons()">Generate Icons</button>
+    <div id="status"></div>
+
+    <script>
+        function generateIcons() {
+            const sizes = [192, 512];
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<p>Generating icons...</p>';
+
+            sizes.forEach(size => {
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+
+                // Create gradient background
+                const gradient = ctx.createLinearGradient(0, 0, size, size);
+                gradient.addColorStop(0, '#667eea');
+                gradient.addColorStop(1, '#764ba2');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // Add rounded corners effect
+                const radius = size * 0.15;
+                ctx.beginPath();
+                ctx.moveTo(radius, 0);
+                ctx.lineTo(size - radius, 0);
+                ctx.quadraticCurveTo(size, 0, size, radius);
+                ctx.lineTo(size, size - radius);
+                ctx.quadraticCurveTo(size, size, size - radius, size);
+                ctx.lineTo(radius, size);
+                ctx.quadraticCurveTo(0, size, 0, size - radius);
+                ctx.lineTo(0, radius);
+                ctx.quadraticCurveTo(0, 0, radius, 0);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Redraw gradient in clipped area
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, size, size);
+
+                // Reset composite operation and add emoji
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.font = `bold ${size * 0.4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'white';
+                ctx.fillText('🍅', size / 2, size / 2);
+
+                // Convert to blob and download
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `pwa-${size}x${size}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    statusDiv.innerHTML += `<p>✓ Generated pwa-${size}x${size}.png</p>`;
+                }, 'image/png');
+            });
+
+            setTimeout(() => {
+                statusDiv.innerHTML += '<p><strong>Done! Save the downloaded files to the public/ folder.</strong></p>';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
+
