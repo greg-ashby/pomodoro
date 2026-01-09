@@ -40,6 +40,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showQuickEntry, setShowQuickEntry] = useState(false)
   const intervalRef = useRef(null)
+  const endTimeRef = useRef(null) // Store the timestamp when timer should end
 
   // Save preferences when they change
   useEffect(() => {
@@ -70,30 +71,65 @@ function App() {
     savePreference('soundRepeat', soundRepeat)
   }, [soundRepeat])
 
+  // Request notification permission on mount
   useEffect(() => {
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setCurrentTime((prev) => {
-          if (prev <= 1) {
-            handleTimerComplete()
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  // Timer logic using end timestamp (catches up after sleep)
+  useEffect(() => {
+    if (isRunning && !isPaused && endTimeRef.current) {
+      const updateTimer = () => {
+        const now = Date.now()
+        const remaining = Math.max(0, Math.floor((endTimeRef.current - now) / 1000))
+        
+        if (remaining <= 0) {
+          handleTimerComplete()
+          setCurrentTime(0)
+        } else {
+          setCurrentTime(remaining)
+        }
+      }
+      
+      // Update immediately
+      updateTimer()
+      
+      // Then update every second
+      intervalRef.current = setInterval(updateTimer, 1000)
     } else {
       clearInterval(intervalRef.current)
     }
 
     return () => clearInterval(intervalRef.current)
-  }, [isRunning, isPaused])
+  }, [isRunning, isPaused, mode, focusTime, shortBreak, longBreak])
 
   const handleTimerComplete = () => {
     setIsRunning(false)
     setIsPaused(false)
+    endTimeRef.current = null
+    
+    // Clear timer data from storage and service worker
+    try {
+      localStorage.removeItem('timerEndTime')
+      localStorage.removeItem('timerMode')
+      
+      // Clear service worker timer
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.active?.postMessage({
+            type: 'TIMER_CLEAR'
+          })
+        })
+      }
+    } catch {}
     
     // Play sound when timer completes
     playSound(soundOption, soundVolume, soundRepeat)
+    
+    // Show notification
+    showNotification(mode)
     
     if (mode === 'focus') {
       // Focus always goes to short break, increment session count
@@ -126,17 +162,94 @@ function App() {
     }
   }
 
+  const showNotification = (timerMode) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const modeNames = {
+        focus: 'Focus Time',
+        shortBreak: 'Short Break',
+        longBreak: 'Long Break',
+        custom: 'Custom Timer'
+      }
+      
+      const title = `${modeNames[timerMode] || 'Timer'} Complete!`
+      const body = timerMode === 'focus' 
+        ? 'Time for a break! 🎉'
+        : timerMode === 'longBreak'
+        ? 'Ready to focus again? 🚀'
+        : 'Break time is over!'
+      
+      // Show notification and also send to service worker
+      new Notification(title, {
+        body: body,
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        tag: 'pomodoro-timer',
+        requireInteraction: false
+      })
+      
+      // Also send message to service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(title, {
+            body: body,
+            icon: '/pwa-192x192.png',
+            badge: '/pwa-192x192.png',
+            tag: 'pomodoro-timer',
+            requireInteraction: false
+          })
+        })
+      }
+    }
+  }
+
+  const updateServiceWorker = (endTime, timerMode) => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.active?.postMessage({
+          type: 'TIMER_UPDATE',
+          endTime: endTime,
+          mode: timerMode
+        })
+      })
+    }
+  }
+
   const startTimer = () => {
+    const duration = currentTime
+    endTimeRef.current = Date.now() + (duration * 1000)
     setIsRunning(true)
     setIsPaused(false)
+    
+    // Store timer info for service worker
+    try {
+      localStorage.setItem('timerEndTime', endTimeRef.current.toString())
+      localStorage.setItem('timerMode', mode)
+      updateServiceWorker(endTimeRef.current, mode)
+    } catch {}
   }
 
   const pauseTimer = () => {
+    // Adjust end time based on remaining time when paused
+    if (endTimeRef.current) {
+      const remaining = Math.max(0, Math.floor((endTimeRef.current - Date.now()) / 1000))
+      endTimeRef.current = null
+      setCurrentTime(remaining)
+    }
     setIsPaused(true)
   }
 
   const resumeTimer = () => {
+    // Set new end time based on current remaining time
+    const duration = currentTime
+    endTimeRef.current = Date.now() + (duration * 1000)
     setIsPaused(false)
+    
+    // Update stored timer info
+    try {
+      localStorage.setItem('timerEndTime', endTimeRef.current.toString())
+      localStorage.setItem('timerMode', mode)
+      updateServiceWorker(endTimeRef.current, mode)
+    } catch {}
   }
 
   const resetTimer = () => {
@@ -155,30 +268,89 @@ function App() {
 
   const startFocus = () => {
     setMode('focus')
-    setCurrentTime(focusTime * 60)
+    const duration = focusTime * 60
+    setCurrentTime(duration)
+    endTimeRef.current = Date.now() + (duration * 1000)
     setIsRunning(true)
     setIsPaused(false)
+    
+    try {
+      localStorage.setItem('timerEndTime', endTimeRef.current.toString())
+      localStorage.setItem('timerMode', 'focus')
+      updateServiceWorker(endTimeRef.current, 'focus')
+    } catch {}
   }
 
   const startShortBreak = () => {
     setMode('shortBreak')
-    setCurrentTime(shortBreak * 60)
+    const duration = shortBreak * 60
+    setCurrentTime(duration)
+    endTimeRef.current = Date.now() + (duration * 1000)
     setIsRunning(true)
     setIsPaused(false)
+    
+    try {
+      localStorage.setItem('timerEndTime', endTimeRef.current.toString())
+      localStorage.setItem('timerMode', 'shortBreak')
+      updateServiceWorker(endTimeRef.current, 'shortBreak')
+    } catch {}
   }
 
   const startLongBreak = () => {
     setMode('longBreak')
-    setCurrentTime(longBreak * 60)
+    const duration = longBreak * 60
+    setCurrentTime(duration)
+    endTimeRef.current = Date.now() + (duration * 1000)
     setIsRunning(true)
     setIsPaused(false)
+    
+    try {
+      localStorage.setItem('timerEndTime', endTimeRef.current.toString())
+      localStorage.setItem('timerMode', 'longBreak')
+      updateServiceWorker(endTimeRef.current, 'longBreak')
+    } catch {}
   }
 
   const setQuickTime = (minutes) => {
     setMode('custom')
-    setCurrentTime(minutes * 60)
+    const duration = minutes * 60
+    setCurrentTime(duration)
     setShowQuickEntry(false)
+    // Don't auto-start quick time entries
   }
+  
+  // Check for timer completion on mount (in case app was closed)
+  useEffect(() => {
+    try {
+      const storedEndTime = localStorage.getItem('timerEndTime')
+      const storedMode = localStorage.getItem('timerMode')
+      
+      if (storedEndTime && storedMode) {
+        const endTime = parseInt(storedEndTime, 10)
+        const now = Date.now()
+        
+        if (now >= endTime) {
+          // Timer completed while app was closed
+          endTimeRef.current = null
+          localStorage.removeItem('timerEndTime')
+          localStorage.removeItem('timerMode')
+          
+          // Show notification
+          if ('Notification' in window && Notification.permission === 'granted') {
+            showNotification(storedMode)
+          }
+        } else {
+          // Timer still running, restore it
+          endTimeRef.current = endTime
+          setMode(storedMode)
+          const remaining = Math.floor((endTime - now) / 1000)
+          setCurrentTime(remaining)
+          setIsRunning(true)
+          setIsPaused(false)
+        }
+      }
+    } catch {}
+  }, [])
 
   const fastForward = () => {
     // Stop the timer first
